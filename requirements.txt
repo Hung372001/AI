@@ -1,0 +1,30 @@
+# Core
+
+pydantic
+sqlalchemy
+alembic
+
+# Database
+chromadb
+psycopg2-binary  # PostgreSQL
+redis
+
+# LLM & AI
+openai
+langchain
+sentence-transformers
+transformers
+
+# Document Processing
+pypdf
+python-docx
+pytesseract
+easyocr
+unstructured
+
+# Utilities
+python-dotenv
+celery
+prometheus-client
+loguru
+httpx
