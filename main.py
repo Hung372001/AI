@@ -95,6 +95,10 @@ from fastapi.middleware.cors import CORSMiddleware
 # Routers
 # from api.lesson import router as lesson_router
 from api.document import router as document_router
+from api.tutor import router as tutor_router
+from api.auth import router as auth_router
+from api.progress import router as progress_router
+from api.assignments import router as assignments_router
 # from app.api.admin import router as admin_router  # learning_units
 
 app = FastAPI(
@@ -118,6 +122,10 @@ app.add_middleware(
 # -----------------------------
 # app.include_router(lesson_router)
 app.include_router(document_router)
+app.include_router(tutor_router)
+app.include_router(auth_router)
+app.include_router(progress_router)
+app.include_router(assignments_router)
 # app.include_router(admin_router)
 
 # -----------------------------
