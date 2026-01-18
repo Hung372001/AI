@@ -7,6 +7,7 @@ class Base(DeclarativeBase):
 from .documents import Documents
 from .document_chunk import DocumentChunk
 from .lesson import Lesson
+from .lesson import Lesson
 from .user import User
 from .user_profile import UserProfile
 from .learning_mastery import LearningMastery

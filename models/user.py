@@ -1,5 +1,4 @@
 import uuid
-from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -13,10 +12,9 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     name = Column(String)
     role = Column(String, default="student")
-    password_hash = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     last_login = Column(DateTime)
-
+    password = Column(String, nullable=False)
     profile = relationship(
         "UserProfile",
         back_populates="user",

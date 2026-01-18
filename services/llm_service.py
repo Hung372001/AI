@@ -17,17 +17,18 @@ def _build_prompt(question: str, contexts: List[str]) -> str:
 
 
 async def generate_reply(question: str, contexts: List[str]) -> str:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("Missing OPENAI_API_KEY environment variable.")
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+
+        base_url="http://localhost:11434/v1",
+            api_key=''
+    )
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     prompt = _build_prompt(question, contexts)
 
     def _call():
         response = client.chat.completions.create(
-            model=model,
+            model="qwen2.5:7b",
             messages=[{"role": "system", "content": prompt}],
             temperature=0.7,
         )
@@ -51,8 +52,7 @@ def _build_question_prompt(topic: str, contexts: List[str], count: int) -> str:
 
 async def generate_questions(topic: str, contexts: List[str], count: int) -> List[dict]:
     api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("Missing OPENAI_API_KEY environment variable.")
+
 
     client = OpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -60,7 +60,7 @@ async def generate_questions(topic: str, contexts: List[str], count: int) -> Lis
 
     def _call():
         response = client.chat.completions.create(
-            model=model,
+            model="qwen2.5:7b",
             messages=[{"role": "system", "content": prompt}],
             temperature=0.7,
         )
