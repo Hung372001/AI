@@ -11,6 +11,7 @@ from models.chat_session import ChatSession
 from models.user import User
 from services.chroma_service import collection
 from services.llm_service import generate_reply
+from services.mastery_service import upsert_mastery
 
 router = APIRouter(prefix="/api/tutor", tags=["Tutor"])
 
@@ -90,6 +91,8 @@ async def tutor_chat(payload: TutorChatRequest, db: AsyncSession = Depends(get_d
         content=reply,
     )
     db.add_all([user_message, assistant_message])
+    if payload.topic:
+        await upsert_mastery(db, payload.user_id, payload.topic, delta=0.01)
     await db.commit()
 
     return TutorChatResponse(

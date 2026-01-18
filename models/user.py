@@ -1,6 +1,4 @@
 import uuid
-
-from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -41,5 +39,5 @@ class User(Base):
     attempts = relationship(
         "Attempt",
         back_populates="user",
-        cascade="all,delete-orphan",
+        cascade="all, delete-orphan",
     )
