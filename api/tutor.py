@@ -57,14 +57,22 @@ async def tutor_chat(payload: TutorChatRequest, db: AsyncSession = Depends(get_d
         db.add(session)
         await db.flush()
 
-    query_result = collection.query(
-        query_texts=[payload.message],
-        n_results=3,
-        include=["documents", "distances"],
-    )
+    query_kwargs = {
+        "query_texts": [payload.message],
+        "n_results": 3,
+        "include": ["documents", "distances"],
+    }
+    if payload.grade is not None:
+        query_kwargs["where"] = {"grade": payload.grade}
+
+    query_result = collection.query(**query_kwargs)
+    documents = query_result.get("documents", [[]])[0]
+    if payload.grade is not None and not documents:
+        query_kwargs.pop("where", None)
+        query_result = collection.query(**query_kwargs)
+        documents = query_result.get("documents", [[]])[0]
 
     contexts: List[ContextChunk] = []
-    documents = query_result.get("documents", [[]])[0]
     ids = query_result.get("ids", [[]])[0]
     distances = query_result.get("distances", [[]])[0]
     for chunk_id, content, distance in zip(ids, documents, distances):

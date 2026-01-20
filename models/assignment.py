@@ -5,7 +5,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from . import Base
 
-
 class Assignment(Base):
     __tablename__ = "assignments"
 
@@ -17,6 +16,7 @@ class Assignment(Base):
     )
     topic = Column(String, nullable=False)
     difficulty = Column(Integer)
+    grade = Column(Integer)
     created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="assignments")

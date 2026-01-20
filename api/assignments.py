@@ -21,6 +21,7 @@ class CreateAssignmentRequest(BaseModel):
     user_id: str
     topic: str
     difficulty: int | None = None
+    grade: int | None = None
 
 
 class AssignmentResponse(BaseModel):
@@ -28,12 +29,20 @@ class AssignmentResponse(BaseModel):
     user_id: str
     topic: str
     difficulty: int | None = None
+    grade: int | None = None
 
 
 class AttemptPayload(BaseModel):
     question_id: str
     student_answer: str
+
+
+class AttemptResult(BaseModel):
+    question_id: str
+    student_answer: str
     score: float = Field(..., ge=0.0, le=1.0)
+    correct_answer: str | None = None
+    grading_note: str
 
 
 class SubmitAssignmentRequest(BaseModel):
@@ -45,17 +54,19 @@ class SubmitAssignmentRequest(BaseModel):
 class SubmitAssignmentResponse(BaseModel):
     assignment_id: str
     mastery_score: float
-    results: List[AttemptPayload]
+    results: List[AttemptResult]
 
 
 class GenerateQuestionsRequest(BaseModel):
     topic: str | None = None
     count: int = Field(3, ge=1, le=10)
+    grade: int | None = None
 
 
 class QuestionResponse(BaseModel):
     id: str
     question_text: str
+    answer_key: str | None = None
     hint: str | None = None
 
 
@@ -76,6 +87,7 @@ async def create_assignment(
         user_id=payload.user_id,
         topic=payload.topic,
         difficulty=payload.difficulty,
+        grade=payload.grade,
     )
     db.add(assignment)
     await db.commit()
@@ -86,6 +98,7 @@ async def create_assignment(
         user_id=str(assignment.user_id),
         topic=assignment.topic,
         difficulty=assignment.difficulty,
+        grade=assignment.grade,
     )
 
 
@@ -108,19 +121,51 @@ async def submit_assignment(
     if not payload.attempts:
         raise HTTPException(status_code=400, detail="Attempts required")
 
+    question_ids = {attempt.question_id for attempt in payload.attempts}
+    question_rows = await db.execute(
+        select(Question).where(Question.id.in_(question_ids))
+    )
+    questions = {str(q.id): q for q in question_rows.scalars().all()}
+    missing = question_ids.difference(questions.keys())
+    if missing:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Questions not found: {', '.join(sorted(missing))}",
+        )
+
+    def normalize_answer(value: str) -> str:
+        return " ".join(value.strip().lower().split())
+
     total_score = 0.0
-    results: List[AttemptPayload] = []
+    results: List[AttemptResult] = []
     for attempt in payload.attempts:
-        total_score += attempt.score
+        question = questions[attempt.question_id]
+        expected = normalize_answer(question.answer_key or "")
+        actual = normalize_answer(attempt.student_answer)
+        score = 1.0 if expected and actual == expected else 0.0
+        grading_note = (
+            "So khớp đáp án sau khi chuẩn hóa (lowercase, bỏ khoảng trắng thừa)."
+            if expected
+            else "Chưa có đáp án chuẩn để chấm điểm."
+        )
+        total_score += score
         db.add(
             Attempt(
                 question_id=attempt.question_id,
                 user_id=payload.user_id,
                 student_answer=attempt.student_answer,
-                score=attempt.score,
+                score=score,
             )
         )
-        results.append(attempt)
+        results.append(
+            AttemptResult(
+                question_id=attempt.question_id,
+                student_answer=attempt.student_answer,
+                score=score,
+                correct_answer=question.answer_key,
+                grading_note=grading_note,
+            )
+        )
 
     mastery_score = total_score / len(payload.attempts)
     mastery = await upsert_mastery(
@@ -154,12 +199,21 @@ async def generate_assignment_questions(
         raise HTTPException(status_code=404, detail="Assignment not found")
 
     topic = payload.topic or assignment.topic
-    query_result = collection.query(
-        query_texts=[topic],
-        n_results=5,
-        include=["documents"],
-    )
+    grade = payload.grade if payload.grade is not None else assignment.grade
+    query_kwargs = {
+        "query_texts": [topic],
+        "n_results": 5,
+        "include": ["documents"],
+    }
+    if grade is not None:
+        query_kwargs["where"] = {"grade": grade}
+
+    query_result = collection.query(**query_kwargs)
     documents = query_result.get("documents", [[]])[0]
+    if grade is not None and not documents:
+        query_kwargs.pop("where", None)
+        query_result = collection.query(**query_kwargs)
+        documents = query_result.get("documents", [[]])[0]
 
     try:
         generated = await generate_questions(topic, documents, payload.count)
@@ -174,6 +228,7 @@ async def generate_assignment_questions(
         question = Question(
             assignment_id=assignment.id,
             question_text=question_text,
+            answer_key=item.get("answer_key"),
             hint=item.get("hint"),
         )
         db.add(question)
@@ -182,6 +237,7 @@ async def generate_assignment_questions(
             QuestionResponse(
                 id=str(question.id),
                 question_text=question.question_text,
+                answer_key=question.answer_key,
                 hint=question.hint,
             )
         )

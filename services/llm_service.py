@@ -17,18 +17,17 @@ def _build_prompt(question: str, contexts: List[str]) -> str:
 
 
 async def generate_reply(question: str, contexts: List[str]) -> str:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("Missing OPENAI_API_KEY environment variable.")
 
-    client = OpenAI(
-
-        base_url="http://localhost:11434/v1",
-            api_key=''
-    )
+    client = OpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     prompt = _build_prompt(question, contexts)
 
     def _call():
         response = client.chat.completions.create(
-            model="qwen2.5:7b",
+            model=model,
             messages=[{"role": "system", "content": prompt}],
             temperature=0.7,
         )
@@ -45,6 +44,7 @@ def _build_question_prompt(topic: str, contexts: List[str], count: int) -> str:
         f"Ngữ cảnh:\n{context_text}\n\n"
         "Yêu cầu: Trả về JSON array, mỗi phần tử có các trường:\n"
         "- question_text (string)\n"
+        "- answer_key (string, đáp án ngắn gọn)\n"
         "- hint (string, optional)\n"
         f"Số lượng câu hỏi: {count}\n"
     )
@@ -52,7 +52,8 @@ def _build_question_prompt(topic: str, contexts: List[str], count: int) -> str:
 
 async def generate_questions(topic: str, contexts: List[str], count: int) -> List[dict]:
     api_key = os.getenv("OPENAI_API_KEY")
-
+    if not api_key:
+        raise ValueError("Missing OPENAI_API_KEY environment variable.")
 
     client = OpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -60,22 +61,25 @@ async def generate_questions(topic: str, contexts: List[str], count: int) -> Lis
 
     def _call():
         response = client.chat.completions.create(
-            model="qwen2.5:7b",
+            model=model,
             messages=[{"role": "system", "content": prompt}],
             temperature=0.7,
         )
         return response.choices[0].message.content
 
     raw = await anyio.to_thread.run_sync(_call)
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.replace("```json", "", 1).replace("```", "", 1).strip()
     try:
-        data = json.loads(raw)
+        data = json.loads(cleaned)
         if isinstance(data, list):
             return data
     except json.JSONDecodeError:
         pass
 
     questions: List[dict] = []
-    for line in raw.splitlines():
+    for line in cleaned.splitlines():
         line = line.strip("- ").strip()
         if line:
             questions.append({"question_text": line})
