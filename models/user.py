@@ -14,8 +14,13 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     name = Column(String)
     role = Column(String, default="student")
+
     created_at = Column(DateTime, server_default=func.now())
-    last_login = Column(DateTime)
+    last_login = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
     password = Column(String, nullable=False)
     profile = relationship(
         "UserProfile",

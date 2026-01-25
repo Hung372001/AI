@@ -1,30 +1,37 @@
 # Core
 
-pydantic
-sqlalchemy
-alembic
+pydantic~=2.12.5
+sqlalchemy~=2.0.45
+alembic~=1.18.0
 
 # Database
-chromadb
+chromadb~=1.4.0
 psycopg2-binary  # PostgreSQL
 redis
 
 # LLM & AI
-openai
+openai~=2.15.0
 langchain
 sentence-transformers
 transformers
 
 # Document Processing
-pypdf
-python-docx
+pypdf~=6.6.0
+python-docx~=1.2.0
 pytesseract
 easyocr
 unstructured
 
 # Utilities
-python-dotenv
+python-dotenv~=1.2.1
 celery
 prometheus-client
 loguru
 httpx
+fastapi~=0.128.0
+grpcio~=1.76.0
+psutil~=7.2.1
+starlette~=0.50.0
+python-jose~=3.5.0
+tiktoken~=0.12.0
+anyio~=4.12.1

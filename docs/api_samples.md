@@ -189,7 +189,8 @@ Below are example payloads for the planned tutoring API. Fields marked as `optio
 {
   "user_id": "f502f3f1-4a2e-46a5-8e5e-0d9a7a2b9b2c",
   "topic": "hinh-hoc",
-  "difficulty": 2
+  "difficulty": 2,
+  "grade": 6
 }
 ```
 
@@ -200,14 +201,34 @@ Below are example payloads for the planned tutoring API. Fields marked as `optio
   "user_id": "f502f3f1-4a2e-46a5-8e5e-0d9a7a2b9b2c",
   "topic": "hinh-hoc",
   "difficulty": 2,
-  "created_at": "2025-01-01T10:15:00Z",
-  "questions": [
-    {
-      "id": "c0c8f3c8-00a1-46aa-8443-651ddf1abf1d",
-      "question_text": "Trong tam giác vuông có hai cạnh góc vuông là 3 và 4, cạnh huyền là bao nhiêu?",
-      "hint": "Áp dụng định lý Pitago."
-    }
-  ]
+  "grade": 6
+}
+```
+
+---
+
+## Lessons
+
+### Recommend lesson
+**POST** `/api/lessons/recommend`
+
+**Request**
+```json
+{
+  "user_id": "f502f3f1-4a2e-46a5-8e5e-0d9a7a2b9b2c",
+  "topic": "hinh-hoc"
+}
+```
+
+**Response**
+```json
+{
+  "lesson_id": "7e5ac8c8-7c7a-4d45-9f26-2c7c1a2b9f12",
+  "grade": 6,
+  "topic": "hinh-hoc",
+  "difficulty": 2,
+  "mastery_score": 0.32,
+  "reason": "Selected lesson matching weakest mastery topic and difficulty band."
 }
 ```
 
@@ -218,6 +239,7 @@ Below are example payloads for the planned tutoring API. Fields marked as `optio
 ```json
 {
   "user_id": "f502f3f1-4a2e-46a5-8e5e-0d9a7a2b9b2c",
+  "topic": "hinh-hoc",
   "attempts": [
     {
       "question_id": "c0c8f3c8-00a1-46aa-8443-651ddf1abf1d",
@@ -231,16 +253,14 @@ Below are example payloads for the planned tutoring API. Fields marked as `optio
 ```json
 {
   "assignment_id": "f7e9f5c3-2dc8-47c0-8a9c-4bde3b7db08d",
-  "summary": {
-    "score": 1.0,
-    "correct": 1,
-    "total": 1
-  },
-  "attempts": [
+  "mastery_score": 1.0,
+  "results": [
     {
       "question_id": "c0c8f3c8-00a1-46aa-8443-651ddf1abf1d",
+      "student_answer": "5",
       "score": 1.0,
-      "feedback": "Đúng rồi! 3-4-5 là tam giác vuông."
+      "correct_answer": "5",
+      "grading_note": "So khớp đáp án sau khi chuẩn hóa (lowercase, bỏ khoảng trắng thừa)."
     }
   ]
 }

@@ -1,6 +1,9 @@
 import hashlib
 import hmac
 import secrets
+from datetime import datetime, timezone, timedelta
+
+from jose import jwt
 
 
 def hash_password(password: str) -> str:
@@ -30,3 +33,26 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 def generate_token() -> str:
     return secrets.token_urlsafe(32)
+
+def create_access_token(
+    data: dict,
+    expires_delta: timedelta | None = None
+):
+    to_encode = data.copy()
+
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(hours=24)
+    )
+
+    to_encode.update({
+        "exp": expire,
+        "iat": datetime.now(timezone.utc)
+    })
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        "MySecret",
+        algorithm="HS256"
+    )
+
+    return encoded_jwt
